@@ -20,7 +20,16 @@ func (p *Pipeline) fileReadingStage(fnames chan string, n int) (allLines chan st
 			go func(ch chan string) {
 				defer wg.Done()
 				for line := range ch {
-					allLines <- line
+					select {
+					case allLines <- line:
+						{
+							continue
+						}
+					case <-p.done:
+						{
+							break
+						}
+					}
 				}
 			}(lines[i])
 		}

@@ -8,7 +8,16 @@ func (p *Pipeline) readDir(dir string) (fileNamesChan chan string) {
 			"qwe", "asd", "zxc",
 		}
 		for _, f := range files {
-			fileNamesChan <- f
+			select {
+			case fileNamesChan <- f:
+				{
+					continue
+				}
+			case <-p.done:
+				{
+					break
+				}
+			}
 		}
 	}()
 	return fileNamesChan

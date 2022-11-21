@@ -12,7 +12,16 @@ func (p *Pipeline) sortContent(content chan string) (res chan string) {
 		}
 		sort.Slice(buffer, func(i, j int) bool { return buffer[i] < buffer[j] })
 		for _, i := range buffer {
-			res <- i
+			select {
+			case res <- i:
+				{
+					continue
+				}
+			case <-p.done:
+				{
+					break
+				}
+			}
 		}
 	}()
 	return res

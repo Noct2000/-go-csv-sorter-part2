@@ -12,20 +12,21 @@ func (p *Pipeline) fileReadingStage(fnames chan string, n int) (allLines chan st
 		lines[i] = make(chan string)
 		readFiles(fnames, lines[i])
 	}
-	wg := &sync.WaitGroup{}
-	for i := range lines {
-		wg.Add(1)
-		go func(ch chan string) {
-			defer wg.Done()
-			for line := range ch {
-				allLines <- line
-			}
-		}(lines[i])
-	}
 	go func() {
+		defer close(allLines)
+		wg := &sync.WaitGroup{}
+		for i := range lines {
+			wg.Add(1)
+			go func(ch chan string) {
+				defer wg.Done()
+				for line := range ch {
+					allLines <- line
+				}
+			}(lines[i])
+		}
 		wg.Wait()
-		close(allLines)
 	}()
+
 	return allLines
 }
 

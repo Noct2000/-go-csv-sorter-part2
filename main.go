@@ -7,30 +7,26 @@ import (
 )
 
 func main() {
-	//done := make(chan struct{})
 	fnChan := ReadDir("fake-dir")
 	contChan := FileReadingStage(fnChan, 300)
 	SortContent(contChan)
 }
 
-func SortContent(content chan string) (res chan string) {
-	res = make(chan string)
-	defer close(res)
-	go func() {
-		var buffer = make([]string, 0, 1000)
-		for line := range content {
-			buffer = append(buffer, line)
-		}
-		sort.Slice(buffer, func(i, j int) bool { return buffer[i] < buffer[j] })
-		for i := range buffer {
-			println(buffer[i])
-		}
+func SortContent(content chan string) {
 
-		for i := range buffer {
-			res <- buffer[i]
-		}
-	}()
-	return res
+	var buffer = make([]string, 0, 1000)
+	for line := range content {
+		buffer = append(buffer, line)
+	}
+	sort.Slice(buffer, func(i, j int) bool { return buffer[i] < buffer[j] })
+	for i := range buffer {
+		println(buffer[i])
+	}
+
+	for i := range buffer {
+		println(buffer[i])
+	}
+
 }
 
 func ReadDir(dir string) (fileNamesChan chan string) {
@@ -41,19 +37,7 @@ func ReadDir(dir string) (fileNamesChan chan string) {
 			"qwe", "asd", "zxc",
 		}
 		for _, f := range files {
-			println(f)
-			select {
-			case fileNamesChan <- f:
-				{
-					continue
-				}
-			case <-p.done:
-				{
-					println("stop")
-					return
-				}
-			}
-
+			fileNamesChan <- f
 		}
 	}()
 	return fileNamesChan
@@ -66,20 +50,21 @@ func FileReadingStage(fnames chan string, n int) (allLines chan string) {
 		lines[i] = make(chan string)
 		ReadFiles(fnames, lines[i])
 	}
-	wg := &sync.WaitGroup{}
-	for i := range lines {
-		wg.Add(1)
-		go func(ch chan string) {
-			defer wg.Done()
-			for line := range ch {
-				allLines <- line
-			}
-		}(lines[i])
-	}
 	go func() {
+		defer close(allLines)
+		wg := &sync.WaitGroup{}
+		for i := range lines {
+			wg.Add(1)
+			go func(ch chan string) {
+				defer wg.Done()
+				for line := range ch {
+					allLines <- line
+				}
+			}(lines[i])
+		}
 		wg.Wait()
-		close(allLines)
 	}()
+
 	return allLines
 }
 

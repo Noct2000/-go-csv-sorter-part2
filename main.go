@@ -9,23 +9,27 @@ import (
 func main() {
 	fnChan := ReadDir("fake-dir")
 	contChan := FileReadingStage(fnChan, 300)
-	SortContent(contChan)
+	res := SortContent(contChan)
+	for i := range res {
+		println(i)
+	}
 }
 
-func SortContent(content chan string) {
+func SortContent(content chan string) (res chan string) {
+	res = make(chan string)
 
-	var buffer = make([]string, 0, 1000)
-	for line := range content {
-		buffer = append(buffer, line)
-	}
-	sort.Slice(buffer, func(i, j int) bool { return buffer[i] < buffer[j] })
-	for i := range buffer {
-		println(buffer[i])
-	}
-
-	for i := range buffer {
-		println(buffer[i])
-	}
+	go func() {
+		defer close(res)
+		var buffer = make([]string, 0, 1000)
+		for line := range content {
+			buffer = append(buffer, line)
+		}
+		sort.Slice(buffer, func(i, j int) bool { return buffer[i] < buffer[j] })
+		for _, i := range buffer {
+			res <- i
+		}
+	}()
+	return res
 
 }
 

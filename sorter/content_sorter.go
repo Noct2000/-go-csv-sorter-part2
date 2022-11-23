@@ -1,7 +1,5 @@
 package sorter
 
-import "sort"
-
 func (p *Pipeline) sortContent(content chan string) (res chan string) {
 	res = make(chan string)
 	go func() {
@@ -10,8 +8,8 @@ func (p *Pipeline) sortContent(content chan string) (res chan string) {
 		for line := range content {
 			buffer = append(buffer, line)
 		}
-		sort.Slice(buffer, func(i, j int) bool { return buffer[i] < buffer[j] })
-		for _, i := range buffer {
+		content := p.processBufferContent(p.sortingFieldIndex, p.isReversedOrder, p.isNotIgnoreHeader, buffer)
+		for _, i := range content {
 			select {
 			case res <- i:
 				{

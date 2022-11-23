@@ -1,7 +1,9 @@
 package sorter
 
 import (
-	"fmt"
+	"bufio"
+	"log"
+	"os"
 	"sync"
 )
 
@@ -43,8 +45,15 @@ func readFiles(fnames, lines chan string) {
 	go func() {
 		defer close(lines)
 		for fname := range fnames {
-			for i := 0; i < 10; i++ {
-				lines <- fmt.Sprintf("%q content# %d\n", fname, i+1)
+			file, err := os.Open(fname)
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer file.Close()
+			fileScanner := bufio.NewScanner(file)
+			fileScanner.Split(bufio.ScanLines)
+			for fileScanner.Scan() {
+				lines <- fileScanner.Text()
 			}
 		}
 	}()

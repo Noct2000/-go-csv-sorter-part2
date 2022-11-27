@@ -21,6 +21,6 @@ Option usage
  1. clone repository
  2. run 
  ```shell
- cd project
+ cd go-csv-sorter-part2
  go run main.go
  ```
